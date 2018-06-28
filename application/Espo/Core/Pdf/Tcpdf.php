@@ -28,6 +28,7 @@
  ************************************************************************/
 
 namespace Espo\Core\Pdf;
+define('K_TCPDF_CALLS_IN_HTML', true);
 
 require "vendor/tecnickcom/tcpdf/tcpdf.php";
 
@@ -41,6 +42,35 @@ class Tcpdf extends \TCPDF
     protected $footerPosition = 15;
 
     protected $useGroupNumbers = false;
+
+    protected $headerImage = array(
+    	'url' => '',
+	    'x' => 0,
+	    'y' => 0,
+	    'w' => 0,
+	    'h' => 0,
+	    'type' => 'JPEG',
+	    'resize' => true,
+	    'dpi' => 150
+    );
+
+	/**
+	 * @return array $headerImage
+	 */
+	public function getHeaderImage()
+	{
+		return $this->headerImage;
+	}
+
+	/**
+	 * @param array $headerImage
+	 * @return void
+	 */
+	public function setHeaderImage($headerImage)
+	{
+		$this->headerImage = $headerImage;
+	}
+
 
     public function setUseGroupNumbers($value)
     {
@@ -56,6 +86,36 @@ class Tcpdf extends \TCPDF
     {
         $this->footerPosition = $position;
     }
+
+	public function Header() {
+		// get the current page break margin
+		$bMargin = $this->getBreakMargin();
+		// get current auto-page-break mode
+		$auto_page_break = $this->AutoPageBreak;
+		// disable auto-page-break
+		$this->SetAutoPageBreak(false, 0);
+		// set bacground image
+
+		if (file_exists($this->headerImage['url'])) {
+			$this->Image(
+				$this->headerImage['url'],
+				$this->headerImage['x'],
+				$this->headerImage['y'],
+				$this->headerImage['w'],
+				$this->headerImage['h'],
+				$this->headerImage['type'],
+				'',
+				'',
+				$this->headerImage['resize'],
+				$this->headerImage['dpi']
+			);
+		}
+		// restore auto-page-break status
+		$this->SetAutoPageBreak($auto_page_break, $bMargin);
+		// set the starting point for the page content
+		$this->setPageMark();
+	}
+
 
     public function Footer() {
         $breakMargin = $this->getBreakMargin();

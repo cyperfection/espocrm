@@ -81,9 +81,27 @@ class Pdf extends \Espo\Core\Services\Base
     protected function printEntity(Entity $entity, Entity $template, Htmlizer $htmlizer, \Espo\Core\Pdf\Tcpdf $pdf)
     {
         $fontFace = $this->getConfig()->get('pdfFontFace', $this->fontFace);
+	    if ($template->get('printBackgroundImage') && $template->get('backgroundImageId')) {
+
+		    $attachment = $this->getEntityManager()->getEntity('Attachment', $template->get('backgroundImageId'));
+		    list(,$type) = explode(  $template->get('backgroundImage')->get('type'));
+	        $image = $_SERVER['DOCUMENT_ROOT'] . $this->getEntityManager()->getRepository('Attachment')->getFilePath($attachment);
+	        $imageArray =array(
+		        'url' => $image,
+		        'x' => $template->get('backgroundPositionX'),
+		        'y' => $template->get('backgroundPositionY'),
+		        'w' => $template->get('backgroundSizeW'),
+		        'h' => $template->get('backgroundSizeH'),
+		        'type' => strtoupper($type),
+		        'resize' => true,
+		        'dpi' => 150
+	        );
+	        $pdf->setHeaderImage($imageArray);
+        } else {
+        	$pdf->setPrintHeader(false);
+        }
 
         $pdf->setFont($fontFace, '', $this->fontSize, '', true);
-        $pdf->setPrintHeader(false);
 
         $pdf->setAutoPageBreak(true, $template->get('bottomMargin'));
         $pdf->setMargins($template->get('leftMargin'), $template->get('topMargin'), $template->get('rightMargin'));
