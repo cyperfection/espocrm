@@ -29,11 +29,13 @@
    "fields":{
       "currency":{
          "type":"varchar",
-         "disabled": true
+         "disabled": true,
+         "maxLength": 6
       },
       "converted":{
          "type":"currencyConverted",
-         "readOnly": true
+         "readOnly": true,
+         "importDisabled": true
       }
    },
    "filter": true,

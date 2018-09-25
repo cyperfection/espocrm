@@ -73,7 +73,7 @@
                             <label>{{label}}</label>
                         </div>
                         {{#if ../editable}}
-                        <div class="right"><a href="javascript:" data-action="editField" class="edit-field"><i class="glyphicon glyphicon-pencil"></i></a></div>
+                        <div class="right"><a href="javascript:" data-action="editField" class="edit-field"><i class="fas fa-pencil-alt fa-sm"></i></a></div>
                         {{/if}}
                     </li>
                 {{/each}}
@@ -85,12 +85,12 @@
             <header>{{translate 'Disabled' scope='Admin'}}</header>
             <ul class="disabled connected">
                 {{#each disabledFields}}
-                    <li draggable="true" data-name="{{name}}">
+                    <li draggable="true" {{#each ../dataAttributeList}}data-{{toDom this}}="{{prop ../this this}}" {{/each}}>
                         <div class="left">
                             <label>{{label}}</label>
                         </div>
                         {{#if ../editable}}
-                        <div class="right"><a href="javascript:" data-action="editField" class="edit-field"><i class="glyphicon glyphicon-pencil"></i></a></div>
+                        <div class="right"><a href="javascript:" data-action="editField" class="edit-field"><i class="fas fa-pencil-alt fa-sm"></i></a></div>
                         {{/if}}
                     </li>
                 {{/each}}

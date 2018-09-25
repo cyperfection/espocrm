@@ -48,7 +48,7 @@ Espo.define('crm:views/record/panels/tasks', 'views/record/panels/relationship',
                 title: 'Create Task',
                 acl: 'create',
                 aclScope: 'Task',
-                html: '<span class="glyphicon glyphicon-plus"></span>',
+                html: '<span class="fas fa-plus"></span>',
             }
         ],
 
@@ -171,6 +171,9 @@ Espo.define('crm:views/record/panels/tasks', 'views/record/panels/relationship',
         actionCreateTask: function (data) {
             var self = this;
             var link = this.link;
+            if (this.scope === 'Account') {
+                link = 'tasks';
+            }
             var scope = 'Task';
             var foreignLink = this.model.defs['links'][link].foreign;
 
@@ -213,8 +216,7 @@ Espo.define('crm:views/record/panels/tasks', 'views/record/panels/relationship',
                     this.collection.fetch();
                 }.bind(this)
             });
-        },
+        }
 
     });
 });
-

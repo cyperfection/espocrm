@@ -120,6 +120,7 @@ Espo.define('views/fields/email', 'views/fields/varchar', function (Dep) {
                 if (this.model.get(this.name)) {
                     data.isErased = this.model.get(this.name).indexOf(this.erasedPlaceholder) === 0
                 }
+                data.valueIsSet = this.model.has(this.name);
             }
 
             return data;
@@ -273,9 +274,9 @@ Espo.define('views/fields/email', 'views/fields/varchar', function (Dep) {
             });
 
             if (c == $input.size()) {
-                this.$el.find('[data-action="addEmailAddress"]').removeClass('disabled');
+                this.$el.find('[data-action="addEmailAddress"]').removeClass('disabled').removeAttr('disabled');
             } else {
-                this.$el.find('[data-action="addEmailAddress"]').addClass('disabled');
+                this.$el.find('[data-action="addEmailAddress"]').addClass('disabled').attr('disabled', 'disabled');
             }
         },
 
@@ -341,7 +342,7 @@ Espo.define('views/fields/email', 'views/fields/varchar', function (Dep) {
                 attributes.nameHash[emailAddress] = this.model.get('name');
             }
 
-            if (this.getPreferences().get('emailUseExternalClient')) {
+            if (this.getPreferences().get('emailUseExternalClient') || !this.getAcl().checkScope('Email', 'create')) {
                 require('email-helper', function (EmailHelper) {
                     var emailHelper = new EmailHelper();
                     var link = emailHelper.composeMailToLink(attributes, this.getConfig().get('outboundEmailBccAddress'));

@@ -36,7 +36,7 @@ Espo.define('views/modals/image-preview', 'views/modal', function (Dep) {
 
         template: 'modals/image-preview',
 
-        size: 'x-large',
+        size: '',
 
         backdrop: true,
 
@@ -44,7 +44,8 @@ Espo.define('views/modals/image-preview', 'views/modal', function (Dep) {
             return {
                 name: this.options.name,
                 url: this.getImageUrl(),
-                originalUrl: this.getOriginalImageUrl()
+                originalUrl: this.getOriginalImageUrl(),
+                size: this.size
             };
         },
 
@@ -55,11 +56,17 @@ Espo.define('views/modals/image-preview', 'views/modal', function (Dep) {
             this.navigationEnabled = (this.options.imageList && this.options.imageList.length > 1);
 
             this.imageList = this.options.imageList || [];
+
+            this.once('remove', function () {
+                $(window).off('resize.image-review');
+            }, this);
         },
 
         getImageUrl: function () {
             var url = this.getBasePath() + '?entryPoint=image&id=' + this.options.id;
-            url += '&size=' + this.size;
+            if (this.size) {
+                url += '&size=' + this.size;
+            }
             if (this.getUser().get('portalId')) {
                 url += '&portalId=' + this.getUser().get('portalId');
             }
@@ -90,7 +97,8 @@ Espo.define('views/modals/image-preview', 'views/modal', function (Dep) {
                 $img.css('maxWidth', width);
             }.bind(this);
 
-            $(window).on('resize', function () {
+            $(window).off('resize.image-review');
+            $(window).on('resize.image-review', function () {
                 manageSize();
             });
 

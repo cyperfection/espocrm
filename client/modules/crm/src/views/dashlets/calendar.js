@@ -53,7 +53,9 @@ Espo.define('crm:views/dashlets/calendar', 'views/dashlets/abstract/base', funct
                     });
                 }, this);
 
-                this.createView('calendar', 'crm:views/calendar/timeline', {
+                var viewName = this.getMetadata().get(['clientDefs', 'Calendar', 'timelineView']) || 'crm:views/calendar/timeline';
+
+                this.createView('calendar', viewName, {
                     el: this.options.el + ' > .calendar-container',
                     header: false,
                     calendarType: 'shared',
@@ -69,7 +71,9 @@ Espo.define('crm:views/dashlets/calendar', 'views/dashlets/abstract/base', funct
                     teamIdList = this.getOption('teamsIds');
                 }
 
-                this.createView('calendar', 'crm:views/calendar/calendar', {
+                var viewName = this.getMetadata().get(['clientDefs', 'Calendar', 'calendarView']) || 'crm:views/calendar/calendar';
+
+                this.createView('calendar', viewName, {
                     mode: mode,
                     el: this.options.el + ' > .calendar-container',
                     header: false,
@@ -108,11 +112,11 @@ Espo.define('crm:views/dashlets/calendar', 'views/dashlets/abstract/base', funct
             if (this.getOption('mode') !== 'timeline') {
                 this.buttonList.push({
                     name: 'previous',
-                    html: '<span class="glyphicon glyphicon-chevron-left"></span>',
+                    html: '<span class="fas fa-chevron-left"></span>',
                 });
                 this.buttonList.push({
                     name: 'next',
-                    html: '<span class="glyphicon glyphicon-chevron-right"></span>',
+                    html: '<span class="fas fa-chevron-right"></span>',
                 });
             }
         },

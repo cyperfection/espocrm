@@ -53,8 +53,8 @@ Espo.define('views/record/search', 'view', function (Dep) {
         textFilterDisabled: false,
 
         viewModeIconClassMap: {
-            list: 'glyphicon glyphicon-align-justify',
-            kanban: 'glyphicon glyphicon-equalizer icon-rotate-180'
+            list: 'fas fa-align-justify',
+            kanban: 'fas fa-grip-horizontal'
         },
 
         data: function () {
@@ -505,7 +505,7 @@ Espo.define('views/record/search', 'view', function (Dep) {
 
             var barContentHtml = '<'+tag+' href="javascript:" style="cursor: '+cursor+';" class="label label-'+style+'" data-action="'+action+'">' + label + '</'+tag+'>';
             if (id) {
-                barContentHtml += ' <a href="javascript:" title="'+this.translate('Remove')+'" class="small" data-action="removePreset" data-id="'+id+'"><span class="glyphicon glyphicon-remove"></span></a>';
+                barContentHtml += ' <a href="javascript:" title="'+this.translate('Remove')+'" class="small" data-action="removePreset" data-id="'+id+'"><span class="fas fa-times"></span></a>';
             }
             barContentHtml = '<span style="margin-right: 10px;">' + barContentHtml + '</span>'
 
@@ -584,7 +584,7 @@ Espo.define('views/record/search', 'view', function (Dep) {
 
             presetName = presetName || '';
 
-            this.$el.find('ul.filter-menu a.preset[data-name="'+presetName+'"]').prepend('<span class="glyphicon glyphicon-ok pull-right"></span>');
+            this.$el.find('ul.filter-menu a.preset[data-name="'+presetName+'"]').prepend('<span class="fas fa-check pull-right"></span>');
         },
 
         manageBoolFilters: function () {
@@ -705,7 +705,7 @@ Espo.define('views/record/search', 'view', function (Dep) {
             var rendered = false;
             if (this.isRendered()) {
                 rendered = true;
-                this.$advancedFiltersPanel.append('<div data-name="'+name+'" class="filter filter-' + name + ' col-sm-4 col-md-3" />');
+                this.$advancedFiltersPanel.append('<div data-name="'+name+'" class="filter filter-' + name + '" />');
             }
 
             this.createView('filter-' + name, 'views/search/filter', {

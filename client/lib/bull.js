@@ -212,6 +212,8 @@ var Bull = Bull || {};
 
         _isRendered: false,
 
+        _isFullyRendered: false,
+
         _isBeingRendered: false,
 
         _isRemoved: false,
@@ -349,11 +351,19 @@ var Bull = Bull || {};
         },
 
         /**
-         * Check whether view has been already rendered.
+         * Checks whether view has been already rendered.
          * @return {Bool}
          */
         isRendered: function () {
             return this._isRendered;
+        },
+
+        /**
+         * Checks whether view has been fully rendered (afterRender has been executed).
+         * @return {Bool}
+         */
+        isFullyRendered: function () {
+            return this._isFullyRendered
         },
 
         isBeingRendered: function () {
@@ -385,6 +395,9 @@ var Bull = Bull || {};
          * Render view.
          */
         render: function (callback) {
+            this._isRendered = false;
+            this._isFullyRendered = false;
+
             this._getHtml(function (html) {
                 if (this._isRenderCanceled) {
                     this._isRenderCanceled = false;
@@ -407,6 +420,20 @@ var Bull = Bull || {};
 
         },
 
+        reRender: function (force) {
+            if (this.isRendered()) {
+                this.render();
+            } else if (this.isBeingRendered()) {
+                this.once('after:render', function () {
+                    this.render();
+                }, this);
+            } else {
+                if (force) {
+                    this.render();
+                }
+            }
+        },
+
         _afterRender: function () {
             this._isBeingRendered = false;
             this._isRendered = true;
@@ -419,6 +446,7 @@ var Bull = Bull || {};
             }
             this.afterRender();
             this.trigger("after:render", this);
+            this._isFullyRendered = true;
         },
 
         /**
@@ -784,13 +812,15 @@ var Bull = Bull || {};
                 options.el = this.getSelector() + ' [data-view="'+key+'"]';
             }
             this._factory.create(viewName, options, function (view) {
+                var isSet = false;
                 if (this._isRendered || options.setViewBeforeCallback) {
                     this.setView(key, view);
+                    isSet = true;
                 }
                 if (typeof callback === 'function') {
                     callback.call(context, view);
                 }
-                if (!this._isRendered && !options.setViewBeforeCallback) {
+                if (!this._isRendered && !options.setViewBeforeCallback && !isSet) {
                     this.setView(key, view);
                 }
             }.bind(this));
@@ -912,6 +942,7 @@ var Bull = Bull || {};
                 this.collection.off(null, null, this);
             }
             this._isRendered = false;
+            this._isFullyRendered = false;
             this._isBeingRendered = false;
             this._isRemoved = true;
             return this;

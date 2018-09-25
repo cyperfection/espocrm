@@ -42,7 +42,7 @@ Espo.define('views/import/step1', 'view', function (Dep) {
             },
 
             'change #import-field-delimiter': function (e) {
-                this.formData.fieldDelimiter = e.currentTarget.value;
+                this.formData.delimiter = e.currentTarget.value;
                 this.preview();
             },
 
@@ -61,18 +61,22 @@ Espo.define('views/import/step1', 'view', function (Dep) {
             var scopes = this.getMetadata().get('scopes');
             for (var scopeName in scopes) {
                 if (scopes[scopeName].importable) {
+                    if (!this.getAcl().checkScope(scopeName, 'create')) continue;
                     list.push(scopeName);
                 }
             }
             list.sort(function (v1, v2) {
                  return this.translate(v1, 'scopeNamesPlural').localeCompare(this.translate(v2, 'scopeNamesPlural'));
             }.bind(this));
+
             return list;
         },
 
         data: function () {
+            var entityList = this.getEntityList();
+
             return {
-                entityList: this.getEntityList(),
+                entityList: entityList,
                 currencyList: this.getConfig().get('currencyList'),
                 dateFormatDataList: [
                     {key: "YYYY-MM-DD", value: '2017-12-27'},
@@ -100,7 +104,7 @@ Espo.define('views/import/step1', 'view', function (Dep) {
             this.formData = this.options.formData || {
                 entityType: this.options.entityType || false,
                 headerRow: true,
-                fieldDelimiter: ',',
+                delimiter: ',',
                 textQualifier: '"',
                 dateFormat: 'YYYY-MM-DD',
                 timeFormat: 'HH:mm',
@@ -122,7 +126,7 @@ Espo.define('views/import/step1', 'view', function (Dep) {
             this.formData.headerRow = $('#import-header-row').get(0).checked;
             this.formData.entityType = $('#import-entity-type').val();
             this.formData.action = $('#import-action').val();
-            this.formData.fieldDelimiter = $('#import-field-delimiter').val();
+            this.formData.delimiter = $('#import-field-delimiter').val();
             this.formData.textQualifier = $('#import-text-qualifier').val();
             this.formData.dateFormat = $('#import-date-format').val();
             this.formData.timeFormat = $('#import-time-format').val();
@@ -151,7 +155,7 @@ Espo.define('views/import/step1', 'view', function (Dep) {
                 $('#import-action').val(this.formData.action);
             }
 
-            $('#import-field-delimiter').val(this.formData.fieldDelimiter);
+            $('#import-field-delimiter').val(this.formData.delimiter);
             $('#import-text-qualifier').val(this.formData.textQualifier);
             $('#import-date-format').val(this.formData.dateFormat);
             $('#import-time-format').val(this.formData.timeFormat);
@@ -196,7 +200,7 @@ Espo.define('views/import/step1', 'view', function (Dep) {
             if (!this.formData.previewString) {
                 return;
             }
-            var arr = this.csvToArray(this.formData.previewString, this.formData.fieldDelimiter, this.formData.textQualifier);
+            var arr = this.csvToArray(this.formData.previewString, this.formData.delimiter, this.formData.textQualifier);
 
             this.formData.previewArray = arr;
 

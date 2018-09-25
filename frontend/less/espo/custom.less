@@ -32,9 +32,9 @@ blockquote {
 
 
 .modal-header {
-  padding: @modal-title-padding @panel-padding;
-  border-bottom: 0 solid @modal-header-border-color;
-  min-height: (@modal-title-padding + @modal-title-line-height);
+    padding: @modal-title-padding @panel-padding;
+    border-bottom: 0 solid @modal-header-border-color;
+    min-height: (@modal-title-padding + @modal-title-line-height);
 }
 
 .modal-header .close {
@@ -99,7 +99,7 @@ blockquote {
 }
 
 label {
-  margin-bottom: 3px;
+    margin-bottom: 3px;
 }
 
 .table {
@@ -132,13 +132,20 @@ div.list-expanded > ul > li > div.expanded-row > .cell:first-child {
     border-left: 0;
 }
 
-.list > table.table td > span.glyphicon.pull-right,
+.list > table.table td > span.list-icon-container.pull-right {
+    margin-left: 5px;
+}
+
+.list > table.table td > span.list-icon-container.pull-left {
+    margin-right: 5px;
+}
+
 .list > ul.list-group > li.list-row .cell > span.glyphicon.pull-right {
     margin-left: 5px;
     margin-top: 4px;
 }
 
-div.list-kanban > table {
+div.list-kanban > div > table {
     width: 100%;
     table-layout: fixed;
 
@@ -157,7 +164,7 @@ div.list-kanban > table {
         > div {
             padding-left: @table-cell-padding;
             position:relative;
-            line-height: 30px;
+            line-height: 28px;
             height: 100%;
             width: 100%;
         }
@@ -171,17 +178,17 @@ div.list-kanban > table {
             width: 0px;
             height: 0px;
             position: absolute;
-            margin-top: -3px;
+            margin-top: -4px;
         }
 
         > div:after {
-            left: ~"calc(100% - 20px)";
+            left: ~"calc(100% - 10px)";
             z-index: 1;
             border-color: transparent transparent transparent @white-color;
         }
 
         > div:before {
-            left: ~"calc(100% - 22px)";
+            left: ~"calc(100% - 12px)";
             z-index: 2;
             border-color: transparent transparent transparent @gray-light;
         }
@@ -198,7 +205,6 @@ div.list-kanban > table {
         vertical-align: top;
 
         padding-top: @padding-base-horizontal;
-        padding-right: @padding-base-horizontal;
 
         .show-more a {
             margin: 0 auto;
@@ -206,8 +212,9 @@ div.list-kanban > table {
             height: 20px;
 
             > span {
-                top: -2px;
+                top: -4px;
                 color: @text-muted;
+                position: relative;
             }
         }
 
@@ -257,6 +264,67 @@ div.list-kanban > table {
         cursor: move;
     }
 }
+
+div.list-kanban > div.kanban-columns-container {
+    margin-left: -@padding-base-horizontal;
+    margin-right: -@padding-base-horizontal;
+    > table {
+        border-collapse: separate;
+        border-spacing: @padding-base-horizontal 0;
+    }
+}
+
+@supports (display: grid) {
+    div.list-kanban > div.kanban-columns-container,
+    div.list-kanban > div.kanban-head-container {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        > table {
+            display: block !important;
+            border-collapse: unset;
+            border-spacing: unset;
+            > tbody,
+            > thead {
+                display: block !important;
+                tr.kanban-row {
+                    tbody, thead, td, th {
+                        display: block !important;
+                    }
+                    display: grid !important;
+                    grid-column-gap: @padding-base-horizontal;
+                    grid-auto-columns: 1fr;
+                    > td, th {
+                        grid-row: 1;
+                    }
+                }
+            }
+
+        }
+    }
+    div.list-kanban > div.kanban-head-container {
+        background-color: @gray-light;
+        > table {
+            > thead {
+                tr.kanban-row {
+                    overflow: hidden;
+                    > th {
+                        overflow: visible;
+                        min-width: 0;
+                        max-height: 28px;
+                        .kanban-group-label {
+                            display: inline-block;
+                            max-width: ~"calc(100% - 15px)";
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            white-space: nowrap;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 table.table > thead th > a {
     color: @gray-light;
@@ -375,6 +443,10 @@ ul.dropdown-menu > li.checkbox {
     user-select: none;
 }
 
+.dropdown-menu > li > a {
+    line-height: @line-height-computed;
+}
+
 ul.dropdown-menu > li > a.active {
     background-color: @gray-lighter;
     text-decoration: none;
@@ -428,23 +500,19 @@ ul.dropdown-menu > li.checkbox:last-child {
     padding-right: 2px !important;
 }
 
-.btn-icon > span {
-    margin: 0 20px;
-}
-
 .cell > .field {
     overflow-wrap: break-word;
     word-wrap: break-word;
 }
 
 .field .row {
-    margin-left: -5px !important;
-    margin-right: -5px !important;
+    margin-left: -3px !important;
+    margin-right: -3px !important;
 }
 
 .field .row > div {
-    padding-left: 5px !important;
-    padding-right: 5px !important;
+    padding-left: 3px !important;
+    padding-right: 3px !important;
     float: left;
 }
 
@@ -510,8 +578,8 @@ ul.dropdown-menu > li.checkbox:last-child {
 
 .field .link-container .list-group-item .form-control,
 .field .link-container .list-group-item .btn {
-    margin-top: 1px;
-    margin-bottom: 1px;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .field .link-container .link-group-item-with-columns > div > .btn-group {
@@ -525,6 +593,9 @@ ul.dropdown-menu > li.checkbox:last-child {
 .filter > .form-group .field {
     .link-container {
         font-size: @font-size-small;
+        .fa-times {
+            font-size: 12px;
+        }
     }
     .input-group {
         input {
@@ -546,7 +617,8 @@ ul.dropdown-menu > li.checkbox:last-child {
     margin-top: 1px;
 }
 
-.field .link-container > .list-group-item.link-with-role a {
+.field .link-container > .list-group-item.link-with-role > a,
+.field .link-container > .list-group-item.link-with-role > div > a {
     margin-top: 6px;
 }
 
@@ -597,6 +669,7 @@ ul.dropdown-menu > li > a > .check-icon + div {
         width: 740px;
     }
 }
+
 @media screen and (min-width: @screen-md-min) {
     .modal-dialog {
         width: 900px;
@@ -906,6 +979,21 @@ table.no-margin {
     text-overflow: ellipsis;
 }
 
+.expanded-row .cell .complex-text {
+    white-space: normal;
+    overflow: hidden;
+}
+
+.expanded-row .cell {
+    display: inline;
+}
+
+.notification-list .expanded-row > .cell[data-name="data"],
+#notifications-panel .expanded-row > .cell[data-name="data"] {
+    padding-left: 0;
+    padding-right: 0;
+}
+
 #notifications-panel .expanded-row {
     white-space: normal;
     overflow: hidden;
@@ -913,10 +1001,6 @@ table.no-margin {
 
 #notifications-panel .right {
     padding-top: 5px;
-}
-
-.expanded-row .cell {
-    display: inline-block;
 }
 
 .caret-up {
@@ -950,8 +1034,8 @@ table.list th {
 .list > table th[data-name="r-checkbox"] {
     white-space: nowrap;
     .select-all-container {
-        line-height: @line-height-base;
-        height: unit(@line-height-base, em);
+        line-height: @line-height-computed;
+        height: @line-height-computed;
         float: left;
     }
 }
@@ -964,6 +1048,11 @@ table.list th {
 .list .checkbox-dropdown > a {
     padding: 0;
     line-height: 1;
+}
+
+.list .record-checkbox-container {
+    height: @line-height-computed;
+    display: block;
 }
 
 .list > table td > div.field {
@@ -1067,7 +1156,8 @@ table.less-padding td.cell[data-name="buttons"] > .btn-group {
     right: -11px;
 }
 
-.list-container + .button-container {
+.list-container + .button-container,
+.row-list-container + .button-container {
     margin-top: 10px;
     padding-bottom: 0;
 }
@@ -1262,6 +1352,15 @@ label.attach-file-label {
     transform: rotate(90deg);
 }
 
+.icon-flip-horizontal {
+   -moz-transform: scaleX(-1);
+    -webkit-transform: scaleX(-1);
+    -o-transform: scaleX(-1);
+    transform: scaleX(-1);
+    -ms-filter: fliph;
+    filter: fliph;
+}
+
 .post-container > textarea.note,
 textarea.auto-height {
     overflow-x: hidden;
@@ -1312,18 +1411,27 @@ body > footer > p a:visited {
     overflow-x: hidden;
 }
 
+#header .tab span.color-icon {
+    left: 0;
+    font-size: 75%;
+    top: -2px;
+}
+
 .header-breadcrumbs .color-icon {
-    font-size: 60%;
-    left: -2px;
-    margin-right: -2px;
-    top: -1px;
+    font-size: 44%;
+    left: 0px;
+    margin-right: 2px;
+    top: -4px;
+    position: relative;
 }
 
 span.color-icon {
-    font-size: 70%;
-    top: 0;
-    left: -1px;
-    margin-right: -1px;
+    font-size: 50%;
+    top: -2px;
+    left: 1px;
+    margin-right: 1px;
+    display: inline;
+    position: relative;
 }
 
 .message > span.color-icon,
@@ -1331,9 +1439,16 @@ span.color-icon {
 
 }
 
+#global-search-panel .panel-body .cell > .color-icon {
+    margin-right: 5px;
+}
+
 h4.panel-title span.color-icon {
-    font-size: 70%;
-    left: -2px;
+    font-size: 50%;
+    left: 0px;
+    position: relative;
+    margin-right: 2px;
+    top: -2px;
 }
 
 @media screen and (max-width: (@screen-sm-min - 1px)) {
@@ -1426,7 +1541,7 @@ h4.panel-title span.color-icon {
 }
 
 .stream-head-container .internal-badge {
-    position: absolute; top: 34px; left: 19px;
+    position: absolute; top: 32px; left: 19px;
 }
 
 .stream-head-container .internal-badge > span {
@@ -1737,6 +1852,15 @@ table.table td.cell .complex-text {
     padding: 2px 0;
 }
 
+.list-group-tree {
+    .fa-chevron-down,
+    .fa-chevron-right,
+    .empty-icon {
+        display: inline-block;
+        width: 12px;
+    }
+}
+
 .list-group-side {
     border: 0;
 }
@@ -1947,6 +2071,10 @@ pre > code {
     a.category-expanded-toggle-link {
         margin-left: 8px;
     }
+
+    > .list > .list-group-tree > li {
+        padding-left: 0;
+    }
 }
 
 .folders-container > .list-group-side > .list-group-item,
@@ -1982,14 +2110,15 @@ pre > code {
     }
 }
 
-.fas, .far {
-    font-size: 16px;
-}
-
 .note-editor .note-toolbar.sticked {
     z-index: 1;
     position: fixed;
     background-color: @white-color;
+}
+
+.array-add-list-group > li {
+    vertical-align: middle;
+    line-height: 32px;
 }
 
 @media screen and (min-width: @screen-sm-min) {
@@ -2087,5 +2216,178 @@ pre > code {
                 margin-top: 0;
             }
         }
+    }
+
+    #nav-menu-dropdown {
+        width: 46px;
+    }
+}
+
+a.field-info > span.fa-info-circle {
+    font-size: 12px;
+    position: relative;
+    top: -1px;
+}
+
+.dropdown-menu-with-icons {
+    li {
+        a {
+            padding-left: 10px;
+        }
+        .fas, .far, .glyphicon, .empty-icon {
+            width: 16px;
+            text-align: center;
+            display: inline-block;
+        }
+        .item-text {
+            padding-left: 8px;
+            position: static;
+        }
+    }
+}
+
+.fas, .far {
+    font-size: 16px;
+}
+
+.fas.fa-sm,
+.far.fa-sm,
+.btn-sm .fas,
+.btn-sm .far,
+.small .far,
+.small .fas,
+.fas.small,
+.far.small {
+    font-size: 12px;
+}
+
+.btn-icon {
+    width: 36px;
+    padding-left: 0;
+    padding-right: 0;
+
+    .fa, .fas {
+        position: relative;
+        width: 16px;
+        text-align: center;
+    }
+    .fa-sm {
+        top: -1px;
+    }
+}
+
+.btn-icon.btn-sm {
+    width: 34px;
+
+    .fa, .fas {
+        font-size: 12px;
+        width: 12px;
+    }
+}
+
+.btn.btn-icon-wide  {
+    width: 54px;
+}
+
+.btn.btn-icon-x-wide  {
+    width: 76px;
+}
+
+.btn-icon > .fa-chevron-left {
+    left: -1px;
+}
+
+.grid-auto-fill-xs,
+.grid-auto-fill-sm,
+.grid-auto-fill-md {
+    margin-left: ceil((@grid-gutter-width / -2));
+    margin-right: floor((@grid-gutter-width / -2));
+    &:extend(.clearfix all);
+    > div {
+        float: left;
+        position: relative;
+        min-height: 1px;
+        padding-left: ceil((@grid-gutter-width / 2));
+        padding-right: floor((@grid-gutter-width / 2));
+    }
+}
+
+.grid-auto-fill-xs {
+    > div {
+         width: 20%;
+    }
+}
+.grid-auto-fill-sm {
+    > div {
+        width: 25%;
+    }
+}
+.grid-auto-fill-md {
+    > div {
+        width: 50%;
+    }
+}
+
+@media screen and (max-width: (@screen-md-min - 1px)) {
+    .grid-auto-fill-xs {
+        > div {
+            width: 25%;
+        }
+    }
+    .grid-auto-fill-sm {
+        > div {
+            width: 33.33333333333333%;
+        }
+    }
+    .grid-auto-fill-md {
+        > div {
+            width: 50%;
+        }
+    }
+}
+
+@media screen and (max-width: (@screen-sm-min - 1px)) {
+    .grid-auto-fill-xs {
+        > div {
+            width: 50%;
+        }
+    }
+    .grid-auto-fill-sm,
+    .grid-auto-fill-md {
+        > div {
+            width: 100%;
+        }
+    }
+}
+
+@supports (display: grid) {
+    .grid-auto-fill-xs,
+    .grid-auto-fill-sm,
+    .grid-auto-fill-md {
+        display: grid;
+        grid-column-gap: @grid-gutter-width;
+        margin-left: 0;
+        margin-right: 0;
+        > div {
+            width: unset !important;
+            padding-left: unset !important;
+            padding-right: unset !important;
+            min-height: unset !important;
+            position: unset !important;
+            float: unset !important;
+        }
+        &::before,
+        &::after {
+            display: none !important;
+        }
+    }
+    .grid-auto-fill-xs {
+        grid-template-columns: repeat(auto-fill, minmax(@grid-column-width-xsmall, 1fr));
+    }
+    .grid-auto-fill-sm {
+        grid-template-columns: repeat(auto-fill, minmax(@grid-column-width-small, 1fr));
+    }
+    .grid-auto-fill-md {
+        grid-template-columns: repeat(auto-fill, minmax(@grid-column-width-medium, 1fr));
     }
 }

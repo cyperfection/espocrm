@@ -52,14 +52,14 @@ Espo.define('crm:views/dashlets/sales-pipeline', 'crm:views/dashlets/abstract/ch
 
         prepareData: function (response) {
             var d = [];
-            for (var label in response) {
-                var value = response[label];
+
+            response.dataList.forEach(function (item) {
                 d.push({
-                    stageTranslated: this.getLanguage().translateOption(label, 'stage', 'Opportunity'),
-                    value: value,
-                    stage: label
+                    stageTranslated: this.getLanguage().translateOption(item.stage, 'stage', 'Opportunity'),
+                    value: item.value,
+                    stage: item.stage
                 });
-            }
+            }, this);
 
             var data = [];
             for (var i = 0; i < d.length; i++) {
@@ -122,13 +122,24 @@ Espo.define('crm:views/dashlets/sales-pipeline', 'crm:views/dashlets/abstract/ch
                 grid: {
                     color: this.tickColor,
                     verticalLines: false,
-                    outline: 'ew',
+                    outline: '',
                     tickColor: this.tickColor
                 },
                 yaxis: {
                     min: 0,
                     max: this.max + 0.08 * this.max,
-                    showLabels: false
+                    showLabels: true,
+                    color: this.textColor,
+                    tickFormatter: function (value) {
+                        if (value == 0) {
+                            return '';
+                        }
+
+                        if (value % 1 == 0) {
+                            return self.currencySymbol + self.formatNumber(Math.floor(value)).toString();
+                        }
+                        return '';
+                    }
                 },
                 xaxis: {
                     min: 0,
@@ -137,7 +148,7 @@ Espo.define('crm:views/dashlets/sales-pipeline', 'crm:views/dashlets/abstract/ch
                 mouse: {
                     track: true,
                     relative: true,
-                    position: 'ne',
+                    position: 'n',
                     lineColor: this.hoverColor,
                     trackFormatter: function (obj) {
                         if (obj.x >= self.chartData.length) {

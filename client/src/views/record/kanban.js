@@ -50,6 +50,8 @@ Espo.define('views/record/kanban', ['views/record/list'], function (Dep) {
 
         itemViewName: 'views/record/kanban-item',
 
+        rowActionsView: 'views/record/row-actions/default-kanban',
+
         minColumnWidthPx: 125,
 
         events: {
@@ -244,6 +246,10 @@ Espo.define('views/record/kanban', ['views/record/list'], function (Dep) {
             var $item = this.$listKanban.find('.item');
             var $list = this.$listKanban.find('.group-column-list');
 
+            $list.find('> .item').on('touchstart', function (e) {
+                e.originalEvent.stopPropagation();
+            }.bind(this));
+
             $list.sortable({
                 connectWith: '.group-column-list',
                 cancel: '.dropdown-menu *',
@@ -319,6 +325,17 @@ Espo.define('views/record/kanban', ['views/record/list'], function (Dep) {
             this._loadListLayout(function (listLayout) {
                 this.listLayout = listLayout;
                 callback.call(this, listLayout);
+            }.bind(this));
+        },
+
+        getSelectAttributeList: function (callback) {
+            Dep.prototype.getSelectAttributeList.call(this, function (attrubuteList) {
+                if (attrubuteList) {
+                    if (!~attrubuteList.indexOf(this.statusField)) {
+                        attrubuteList.push(this.statusField);
+                    }
+                }
+                callback(attrubuteList);
             }.bind(this));
         },
 
@@ -417,7 +434,8 @@ Espo.define('views/record/kanban', ['views/record/list'], function (Dep) {
                 itemLayout: this.listLayout,
                 rowActionsDisabled: this.rowActionsDisabled,
                 rowActionsView: this.rowActionsView,
-                setViewBeforeCallback: this.options.skipBuildRows && !this.isRendered()
+                setViewBeforeCallback: this.options.skipBuildRows && !this.isRendered(),
+                statusFieldIsEditable: this.statusFieldIsEditable
             }, callback);
         },
 
@@ -523,6 +541,8 @@ Espo.define('views/record/kanban', ['views/record/list'], function (Dep) {
             var $list = this.$el.find('.group-column-list[data-name="'+group+'"]');
             var $showMore = this.$el.find('.group-column[data-name="'+group+'"] .show-more');
 
+            collection.data.select = this.collection.data.select;
+
             this.showMoreRecords(collection, $list, $showMore, function () {
                 this.noRebuild = false;
                 collection.models.forEach(function (model) {
@@ -538,6 +558,17 @@ Espo.define('views/record/kanban', ['views/record/list'], function (Dep) {
 
         getRowContainerHtml: function (id) {
             return '<div class="item" data-id="'+id+'">';
+        },
+
+        actionMoveOver: function (data) {
+            var model = this.collection.get(data.id);
+
+            this.createView('moveOverDialog', 'views/modals/kanban-move-over', {
+                model: model,
+                statusField: this.statusField
+            }, function (view) {
+                view.render();
+            });
         }
 
     });

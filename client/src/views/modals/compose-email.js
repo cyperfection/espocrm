@@ -56,7 +56,7 @@ Espo.define('views/modals/compose-email', 'views/modals/edit', function (Dep) {
 
             this.header = this.getLanguage().translate('Compose Email');
 
-            if (this.getPreferences().get('emailUseExternalClient')) {
+            if (this.getPreferences().get('emailUseExternalClient') || !this.getAcl().checkScope('Email', 'create')) {
                 var attributes = this.options.attributes || {};
 
                 require('email-helper', function (EmailHelper) {
@@ -80,7 +80,7 @@ Espo.define('views/modals/compose-email', 'views/modals/edit', function (Dep) {
                 type: 'editSmall',
                 layoutName: this.layoutName || 'detailSmall',
                 columnCount: this.columnCount,
-                buttonsPosition: false,
+                buttonsDisabled: true,
                 selectTemplateDisabled: this.options.selectTemplateDisabled,
                 removeAttachmentsOnSelectTemplate: this.options.removeAttachmentsOnSelectTemplate,
                 signatureDisabled: this.options.signatureDisabled,

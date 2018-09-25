@@ -105,7 +105,7 @@ Espo.define('views/stream/panel', ['views/record/panels/relationship', 'lib!Text
                     if ($.contains(this.$postContainer.get(0), e.target)) return;
                     if (this.$textarea.val() !== '') return;
 
-                    var attachmentsIds = this.seed.get('attachmentsIds');
+                    var attachmentsIds = this.seed.get('attachmentsIds') || [];
                     if (!attachmentsIds.length && !this.getView('attachments').isUploading) {
                         this.disablePostingMode();
                     }
@@ -363,7 +363,7 @@ Espo.define('views/stream/panel', ['views/record/panels/relationship', 'lib!Text
                     return;
                 }
 
-                if (message == '' && this.seed.get('attachmentsIds').length == 0) {
+                if (message == '' && (this.seed.get('attachmentsIds') || []).length == 0) {
                     this.notify('Post cannot be empty', 'error');
                     this.$textarea.prop('disabled', false);
                     return;
@@ -386,7 +386,7 @@ Espo.define('views/stream/panel', ['views/record/panels/relationship', 'lib!Text
                 }, this);
 
                 model.set('post', message);
-                model.set('attachmentsIds', Espo.Utils.clone(this.seed.get('attachmentsIds')));
+                model.set('attachmentsIds', Espo.Utils.clone(this.seed.get('attachmentsIds') || []));
                 model.set('type', 'Post');
                 model.set('isInternal', this.isInternalNoteMode);
 
@@ -423,7 +423,7 @@ Espo.define('views/stream/panel', ['views/record/panels/relationship', 'lib!Text
                 }
                 list.push({
                     action: 'selectFilter',
-                    html: '<span class="check-icon glyphicon glyphicon-ok pull-right' + (!selected ? ' hidden' : '') + '"></span><div>' + this.translate(item, 'filters', 'Note') + '</div>',
+                    html: '<span class="check-icon fas fa-check pull-right' + (!selected ? ' hidden' : '') + '"></span><div>' + this.translate(item, 'filters', 'Note') + '</div>',
                     data: {
                         name: item
                     }

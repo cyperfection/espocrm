@@ -111,6 +111,7 @@ return array (
     'adminNotifications' => true,
     'adminNotificationsNewVersion' => true,
     'adminNotificationsCronIsNotConfigured' => true,
+    'adminNotificationsNewExtensionVersion' => true,
     'assignmentEmailNotifications' => false,
     'assignmentEmailNotificationsEntityList' => ['Lead', 'Opportunity', 'Task', 'Case'],
     'assignmentNotificationsEntityList' => ['Meeting', 'Call', 'Task', 'Email'],
@@ -171,6 +172,10 @@ return array (
     'textFilterUseContainsForVarchar' => false,
     'tabColorsDisabled' => false,
     'massPrintPdfMaxCount' => 50,
+    'emailKeepParentTeamsEntityList' => ['Case'],
+    'recordListMaxSizeLimit' => 200,
+    'noteDeleteThresholdPeriod' => '1 month',
+    'noteEditThresholdPeriod' => '7 days',
     'isInstalled' => false
 );
 

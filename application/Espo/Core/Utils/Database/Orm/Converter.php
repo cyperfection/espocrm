@@ -90,6 +90,7 @@ class Converter
         'select' => 'select',
         'orderBy' => 'orderBy',
         'where' => 'where',
+        'storeArrayValues' => 'storeArrayValues'
     );
 
     protected $idParams = array(
@@ -491,6 +492,7 @@ class Converter
 
     protected function applyFullTextSearch(&$ormMetadata, $entityType)
     {
+        if (!$this->getDatabaseHelper()->isTableSupportsFulltext(Util::toUnderScore($entityType))) return;
         if (!$this->getMetadata()->get(['entityDefs', $entityType, 'collection', 'fullTextSearch'])) return;
 
         $fieldList = $this->getMetadata()->get(['entityDefs', $entityType, 'collection', 'textFilterFields'], ['name']);

@@ -257,12 +257,13 @@ class Record extends \Espo\Core\Services\Base
 
     protected function loadFollowers(Entity $entity)
     {
-        if ($this->getMetadata()->get("scopes.".$entity->getEntityType().".stream")) {
-            $data = $this->getStreamService()->getEntityFollowers($entity, 0, self::FOLLOWERS_LIMIT);
-            if ($data) {
-                $entity->set('followersIds', $data['idList']);
-                $entity->set('followersNames', $data['nameMap']);
-            }
+        if ($this->getUser()->isPortal()) return;
+        if (!$this->getMetadata()->get(['scopes', $entity->getEntityType(), 'stream'])) return;
+
+        $data = $this->getStreamService()->getEntityFollowers($entity, 0, self::FOLLOWERS_LIMIT);
+        if ($data) {
+            $entity->set('followersIds', $data['idList']);
+            $entity->set('followersNames', $data['nameMap']);
         }
     }
 
@@ -276,6 +277,18 @@ class Record extends \Espo\Core\Services\Base
                     $columns = $defs['columns'];
                 }
                 $entity->loadLinkMultipleField($field, $columns);
+            }
+        }
+    }
+
+    protected function loadLinkMultipleFieldsForList(Entity $entity, $selectAttributeList)
+    {
+        foreach ($selectAttributeList as $attribute) {
+            if ($entity->getAttributeParam($attribute, 'isLinkMultipleIdList')) {
+                $field = $entity->getAttributeParam($attribute, 'relation');
+                if (!$field) continue;
+                if ($entity->has($attribute)) continue;
+                $entity->loadLinkMultipleField($field);
             }
         }
     }
@@ -920,6 +933,9 @@ class Record extends \Espo\Core\Services\Base
             if (!empty($params['loadAdditionalFields'])) {
                 $this->loadAdditionalFields($e);
             }
+            if (!empty($selectAttributeList)) {
+                $this->loadLinkMultipleFieldsForList($e, $selectAttributeList);
+            }
             $this->prepareEntityForOutput($e);
         }
 
@@ -1018,6 +1034,9 @@ class Record extends \Espo\Core\Services\Base
                 $this->loadAdditionalFieldsForList($e);
                 if (!empty($params['loadAdditionalFields'])) {
                     $this->loadAdditionalFields($e);
+                }
+                if (!empty($selectAttributeList)) {
+                    $this->loadLinkMultipleFieldsForList($e, $selectAttributeList);
                 }
                 $this->prepareEntityForOutput($e);
 
@@ -1127,6 +1146,9 @@ class Record extends \Espo\Core\Services\Base
             $recordService->loadAdditionalFieldsForList($e);
             if (!empty($params['loadAdditionalFields'])) {
                 $recordService->loadAdditionalFields($e);
+            }
+            if (!empty($selectAttributeList)) {
+                $this->loadLinkMultipleFieldsForList($e, $selectAttributeList);
             }
             $recordService->prepareEntityForOutput($e);
         }
@@ -1306,7 +1328,7 @@ class Record extends \Espo\Core\Services\Base
                 if ($this->getAcl()->check($entity, 'edit') && $this->checkEntityForMassUpdate($entity, $data)) {
                     $entity->set($data);
                     if ($this->checkAssignment($entity)) {
-                        if ($repository->save($entity)) {
+                        if ($repository->save($entity, ['massUpdate' => true])) {
                             $idsUpdated[] = $entity->id;
                             $count++;
 
@@ -1330,13 +1352,21 @@ class Record extends \Espo\Core\Services\Base
 
             $selectParams = $this->getSelectParams($p);
 
-            $collection = $repository->find($selectParams);
+            $this->getEntityManager()->getRepository($this->getEntityType())->handleSelectParams($selectParams);
 
-            foreach ($collection as $entity) {
+            $sql = $this->getEntityManager()->getQuery()->createSelectQuery($this->getEntityType(), $selectParams);
+            $sth = $this->getEntityManager()->getPdo()->prepare($sql);
+            $sth->execute();
+
+            while ($dataRow = $sth->fetch(\PDO::FETCH_ASSOC)) {
+                $entity = $this->getEntityManager()->getEntityFactory()->create($this->getEntityType());
+                $entity->set($dataRow);
+                $entity->setAsFetched();
+
                 if ($this->getAcl()->check($entity, 'edit') && $this->checkEntityForMassUpdate($entity, $data)) {
                     $entity->set($data);
                     if ($this->checkAssignment($entity)) {
-                        if ($repository->save($entity)) {
+                        if ($repository->save($entity, ['massUpdate' => true, 'skipStreamNotesAcl' => true])) {
                             $idsUpdated[] = $entity->id;
                             $count++;
 
@@ -1405,10 +1435,19 @@ class Record extends \Espo\Core\Services\Base
             }
 
             $selectParams = $this->getSelectParams($p);
-            $skipTextColumns['skipTextColumns'] = true;
-            $collection = $repository->find($selectParams);
+            $selectParams['skipTextColumns'] = true;
 
-            foreach ($collection as $entity) {
+            $this->getEntityManager()->getRepository($this->getEntityType())->handleSelectParams($selectParams);
+
+            $sql = $this->getEntityManager()->getQuery()->createSelectQuery($this->getEntityType(), $selectParams);
+            $sth = $this->getEntityManager()->getPdo()->prepare($sql);
+            $sth->execute();
+
+            while ($dataRow = $sth->fetch(\PDO::FETCH_ASSOC)) {
+                $entity = $this->getEntityManager()->getEntityFactory()->create($this->getEntityType());
+                $entity->set($dataRow);
+                $entity->setAsFetched();
+
                 if ($this->getAcl()->check($entity, 'delete') && $this->checkEntityForMassRemove($entity)) {
                     if ($repository->remove($entity)) {
                         $idsRemoved[] = $entity->id;
@@ -1594,6 +1633,8 @@ class Record extends \Espo\Core\Services\Base
         }
         $exportObj = $this->getInjection('injectableFactory')->createByClassName($className);
 
+        $collection = null;
+
         if (array_key_exists('collection', $params)) {
             $collection = $params['collection'];
         } else {
@@ -1629,12 +1670,14 @@ class Record extends \Espo\Core\Services\Base
                 $selectManager->applyOrder($orderBy, $desc, $selectParams);
             }
 
-            $collection = $this->getRepository()->find($selectParams);
+            $this->getEntityManager()->getRepository($this->getEntityType())->handleSelectParams($selectParams);
+
+            $sql = $this->getEntityManager()->getQuery()->createSelectQuery($this->getEntityType(), $selectParams);
+            $sth = $this->getEntityManager()->getPdo()->prepare($sql);
+            $sth->execute();
         }
 
         $arr = array();
-
-        $collection->toArray();
 
         $attributeListToSkip = [
             'deleted'
@@ -1703,17 +1746,36 @@ class Record extends \Espo\Core\Services\Base
             $exportObj->addAdditionalAttributes($this->entityType, $attributeList, $fieldList);
         }
 
-        foreach ($collection as $entity) {
-            $this->loadAdditionalFieldsForExport($entity);
-            if (method_exists($exportObj, 'loadAdditionalFields')) {
-                $exportObj->loadAdditionalFields($entity, $fieldList);
+        if ($collection) {
+            foreach ($collection as $entity) {
+                $this->loadAdditionalFieldsForExport($entity);
+                if (method_exists($exportObj, 'loadAdditionalFields')) {
+                    $exportObj->loadAdditionalFields($entity, $fieldList);
+                }
+                $row = array();
+                foreach ($attributeList as $attribute) {
+                    $value = $this->getAttributeFromEntityForExport($entity, $attribute);
+                    $row[$attribute] = $value;
+                }
+                $arr[] = $row;
             }
-            $row = array();
-            foreach ($attributeList as $attribute) {
-                $value = $this->getAttributeFromEntityForExport($entity, $attribute);
-                $row[$attribute] = $value;
+        } else {
+            while ($dataRow = $sth->fetch(\PDO::FETCH_ASSOC)) {
+                $entity = $this->getEntityManager()->getEntityFactory()->create($this->getEntityType());
+                $entity->set($dataRow);
+                $entity->setAsFetched();
+
+                $this->loadAdditionalFieldsForExport($entity);
+                if (method_exists($exportObj, 'loadAdditionalFields')) {
+                    $exportObj->loadAdditionalFields($entity, $fieldList);
+                }
+                $row = array();
+                foreach ($attributeList as $attribute) {
+                    $value = $this->getAttributeFromEntityForExport($entity, $attribute);
+                    $row[$attribute] = $value;
+                }
+                $arr[] = $row;
             }
-            $arr[] = $row;
         }
 
         if (is_null($attributeList)) {
@@ -1749,14 +1811,11 @@ class Record extends \Espo\Core\Services\Base
         $attachment->set('name', $fileName);
         $attachment->set('role', 'Export File');
         $attachment->set('type', $mimeType);
+        $attachment->set('contents', $contents);
 
         $this->getEntityManager()->saveEntity($attachment);
 
-        if (!empty($attachment->id)) {
-            $this->getInjection('fileStorageManager')->putContents($attachment, $contents);
-            return $attachment->id;
-        }
-        throw new Error();
+        return $attachment->id;
     }
 
     protected function getAttributeFromEntityForExport(Entity $entity, $attribute)
@@ -2129,7 +2188,7 @@ class Record extends \Espo\Core\Services\Base
         }
 
         // TODO remove in 5.5.0
-        if (in_array($this->getEntityType(), ['Report', 'Workflow'])) {
+        if (in_array($this->getEntityType(), ['Report', 'Workflow', 'ReportPanel'])) {
             return null;
         }
 

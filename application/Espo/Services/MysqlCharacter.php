@@ -29,6 +29,8 @@
 
 namespace Espo\Services;
 
+use Espo\Core\Utils\Database\Schema\Utils as SchemaUtils;
+
 class MysqlCharacter extends \Espo\Core\Services\Base
 {
     protected function init()
@@ -63,7 +65,7 @@ class MysqlCharacter extends \Espo\Core\Services\Base
             $sth->execute();
         }
 
-        $fieldListExceededIndexMaxLength = \Espo\Core\Utils\Database\Schema\Utils::getFieldListExceededIndexMaxLength($ormMeta, $maxIndexLength);
+        $fieldListExceededIndexMaxLength = SchemaUtils::getFieldListExceededIndexMaxLength($ormMeta, $maxIndexLength);
 
         foreach ($ormMeta as $entityName => $entityParams) {
 

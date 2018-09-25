@@ -168,7 +168,8 @@ Espo.define('views/admin/entity-manager/modals/edit-entity', ['views/modal', 'mo
                     name: 'name',
                     params: {
                         required: true,
-                        trim: true
+                        trim: true,
+                        maxLength: 100
                     }
                 },
                 readOnly: scope != false
@@ -283,6 +284,9 @@ Espo.define('views/admin/entity-manager/modals/edit-entity', ['views/modal', 'mo
                     var fieldType = fieldDefs[item].type;
                     if (!this.getMetadata().get(['fields', fieldType, 'textFilter'])) return false
                     if (this.getMetadata().get(['entityDefs', scope, 'fields', item, 'disabled'])) {
+                        return false;
+                    }
+                    if (this.getMetadata().get(['entityDefs', scope, 'fields', item, 'textFilterDisabled'])) {
                         return false;
                     }
                     return true;

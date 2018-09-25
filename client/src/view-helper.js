@@ -186,7 +186,7 @@ Espo.define('view-helper', [], function () {
                 var scope = options.hash.scope || null;
                 var label = options.hash.label || name;
 
-                var html = options.hash.label.html || self.language.translate(label, 'labels', scope);
+                var html = options.hash.html || options.hash.text || self.language.translate(label, 'labels', scope);
                 return new Handlebars.SafeString('<button class="btn btn-'+style+' action'+ (options.hash.hidden ? ' hidden' : '')+'" data-action="'+name+'" type="button">'+html+'</button>');
             });
 
@@ -300,7 +300,7 @@ Espo.define('view-helper', [], function () {
             var html = '';
 
             if (color) {
-                var $span = $('<span class="color-icon glyphicon glyphicon-stop">');
+                var $span = $('<span class="color-icon fas fa-square-full">');
                 $span.css('color', color);
                 if (additionalClassName) {
                     $span.addClass(additionalClassName);
@@ -309,7 +309,7 @@ Espo.define('view-helper', [], function () {
             }
 
             if (!noWhiteSpace) {
-                if (html) html += ' ';
+                if (html) html += '&nbsp;';
             }
 
             return html;

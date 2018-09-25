@@ -74,7 +74,7 @@ class Notification extends \Espo\Services\Record
             $userId = $user->id;
             if (!$this->checkUserNoteAccess($user, $note)) continue;
             if ($note->get('createdById') === $user->id) continue;
-            $id = uniqid();
+            $id = \Espo\Core\Utils\Util::generateId();
             $arr[] = "(".$query->quote($id).", ".$query->quote($encodedData).", ".$query->quote('Note').", ".$query->quote($userId).", ".$query->quote($now).", ".$query->quote($note->id).", ".$query->quote('Note').", ".$query->quote($note->get('parentId')).", ".$query->quote($note->get('parentType')).")";
         }
 
@@ -218,6 +218,7 @@ class Notification extends \Espo\Services\Record
                                 $note->set('relatedName', $related->get('name'));
                             }
                         }
+                        $note->loadLinkMultipleField('attachments');
                         $entity->set('noteData', $note->toArray());
                     } else {
                         unset($collection[$k]);

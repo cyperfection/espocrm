@@ -55,6 +55,8 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
 
     protected $processFieldsBeforeSaveDisabled = false;
 
+    protected $processFieldsAfterRemoveDisabled = false;
+
     protected function addDependency($name)
     {
         $this->dependencies[] = $name;
@@ -124,20 +126,17 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
             return;
         }
 
-        $defs = $metadata->get('entityDefs.' . $entityType);
+        $defs = $metadata->get(['entityDefs', $entityType]);
 
         foreach ($defs['fields'] as $field => $d) {
             if (isset($d['type']) && $d['type'] == 'currency') {
-                if (!empty($d['notStorable'])) {
-                    continue;
-                }
-                if (empty($params['customJoin'])) {
-                    $params['customJoin'] = '';
-                }
-                $alias = Util::toUnderScore($field) . "_currency_alias";
-                $params['customJoin'] .= "
-                    LEFT JOIN currency AS `{$alias}` ON {$alias}.id = ".Util::toUnderScore($entityType).".".Util::toUnderScore($field)."_currency
-                ";
+                if (!empty($d['notStorable'])) continue;
+                if (empty($params['leftJoins'])) $params['leftJoins'] = [];
+                $alias = $field . 'CurrencyRate';
+
+                $params['leftJoins'][] = ['Currency', $alias, [
+                    $alias . '.id:' => $field . 'Currency'
+                ]];
             }
         }
 
@@ -145,45 +144,23 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
 
     protected function handleEmailAddressParams(&$params)
     {
-        $entityType = $this->entityType;
-
-        $defs = $this->getEntityManager()->getMetadata()->get($entityType);
+        $defs = $this->getEntityManager()->getMetadata()->get($this->entityType);
         if (!empty($defs['relations']) && array_key_exists('emailAddresses', $defs['relations'])) {
-            if (empty($params['leftJoins'])) {
-                $params['leftJoins'] = array();
-            }
-            if (empty($params['whereClause'])) {
-                $params['whereClause'] = array();
-            }
-            if (empty($params['joinConditions'])) {
-                $params['joinConditions'] = array();
-            }
-            $params['leftJoins'][] = 'emailAddresses';
-            $params['joinConditions']['emailAddresses'] = array(
+            if (empty($params['leftJoins'])) $params['leftJoins'] = [];
+            $params['leftJoins'][] = ['emailAddresses', null, [
                 'primary' => 1
-            );
+            ]];
         }
     }
 
     protected function handlePhoneNumberParams(&$params)
     {
-        $entityType = $this->entityType;
-
-        $defs = $this->getEntityManager()->getMetadata()->get($entityType);
+        $defs = $this->getEntityManager()->getMetadata()->get($this->entityType);
         if (!empty($defs['relations']) && array_key_exists('phoneNumbers', $defs['relations'])) {
-            if (empty($params['leftJoins'])) {
-                $params['leftJoins'] = array();
-            }
-            if (empty($params['whereClause'])) {
-                $params['whereClause'] = array();
-            }
-            if (empty($params['joinConditions'])) {
-                $params['joinConditions'] = array();
-            }
-            $params['leftJoins'][] = 'phoneNumbers';
-            $params['joinConditions']['phoneNumbers'] = array(
+            if (empty($params['leftJoins'])) $params['leftJoins'] = [];
+            $params['leftJoins'][] = ['phoneNumbers', null, [
                 'primary' => 1
-            );
+            ]];
         }
     }
 
@@ -206,6 +183,11 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
     protected function afterRemove(Entity $entity, array $options = array())
     {
         parent::afterRemove($entity, $options);
+
+        if (!$this->processFieldsAfterRemoveDisabled) {
+            $this->processArrayFieldsRemove($entity);
+        }
+
         if (!$this->hooksDisabled && empty($options['skipHooks'])) {
             $this->getEntityManager()->getHookManager()->process($this->entityType, 'afterRemove', $entity, $options);
         }
@@ -287,6 +269,8 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
             $this->processPhoneNumberSave($entity);
             $this->processSpecifiedRelationsSave($entity);
             $this->processFileFieldsSave($entity);
+            $this->processArrayFieldsSave($entity);
+            $this->processWysiwygFieldsSave($entity);
         }
 
         if (!$this->hooksDisabled && empty($options['skipHooks'])) {
@@ -405,6 +389,57 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
         }
     }
 
+    protected function processArrayFieldsSave(Entity $entity)
+    {
+        foreach ($entity->getAttributes() as $attribute => $defs) {
+            if (!isset($defs['type']) || $defs['type'] !== Entity::JSON_ARRAY) continue;
+            if (!$entity->has($attribute)) continue;
+            if (!$entity->isAttributeChanged($attribute)) continue;
+            if (!$entity->getAttributeParam($attribute, 'storeArrayValues')) continue;
+            if ($entity->getAttributeParam($attribute, 'notStorable')) continue;
+            $this->getEntityManager()->getRepository('ArrayValue')->storeEntityAttribute($entity, $attribute);
+        }
+    }
+
+    protected function processWysiwygFieldsSave(Entity $entity)
+    {
+        if (!$entity->isNew()) return;
+
+        $fieldsDefs = $this->getMetadata()->get(['entityDefs', $entity->getEntityType(), 'fields'], []);
+        foreach ($fieldsDefs as $field => $defs) {
+            if (!empty($defs['type']) && $defs['type'] === 'wysiwyg') {
+                $content = $entity->get($field);
+                if (!$content) continue;
+                if (preg_match_all("/\?entryPoint=attachment&amp;id=([^&=\"']+)/", $content, $matches)) {
+                    if (!empty($matches[1]) && is_array($matches[1])) {
+                        foreach ($matches[1] as $id) {
+                            $attachment = $this->getEntityManager()->getEntity('Attachment', $id);
+                            if ($attachment) {
+                                if (!$attachment->get('relatedId') && !$attachment->get('sourceId')) {
+                                    $attachment->set([
+                                        'relatedId' => $entity->id,
+                                        'relatedType' => $entity->getEntityType()
+                                    ]);
+                                    $this->getEntityManager()->saveEntity($attachment);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    protected function processArrayFieldsRemove(Entity $entity)
+    {
+        foreach ($entity->getAttributes() as $attribute => $defs) {
+            if (!isset($defs['type']) || $defs['type'] !== Entity::JSON_ARRAY) continue;
+            if (!$entity->getAttributeParam($attribute, 'storeArrayValues')) continue;
+            if ($entity->getAttributeParam($attribute, 'notStorable')) continue;
+            $this->getEntityManager()->getRepository('ArrayValue')->deleteEntityAttribute($entity, $attribute);
+        }
+    }
+
     protected function processEmailAddressSave(Entity $entity)
     {
         if ($entity->hasRelation('emailAddresses') && $entity->hasAttribute('emailAddress')) {
@@ -465,17 +500,21 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
                                         $data->$columnName = $foreignEntity->get($columnField);
                                     }
                                     $existingColumnsData->$foreignId = $data;
-                                    $entity->setFetched($columnsFieldsName, $existingColumnsData);
+                                    if (!$entity->isNew()) {
+                                        $entity->setFetched($columnsFieldsName, $existingColumnsData);
+                                    }
                                 }
 
                             }
                         }
 
-                        if ($entity->has($fieldName)) {
-                            $entity->setFetched($fieldName, $existingIds);
-                        }
-                        if ($entity->has($columnsFieldsName) && !empty($columns)) {
-                            $entity->setFetched($columnsFieldsName, $existingColumnsData);
+                        if (!$entity->isNew()) {
+                            if ($entity->has($fieldName)) {
+                                $entity->setFetched($fieldName, $existingIds);
+                            }
+                            if ($entity->has($columnsFieldsName) && !empty($columns)) {
+                                $entity->setFetched($columnsFieldsName, $existingColumnsData);
+                            }
                         }
 
                         foreach ($existingIds as $id) {
@@ -540,13 +579,17 @@ class RDB extends \Espo\ORM\Repositories\RDB implements Injectable
                 $where[$foreignKey] = $entity->id;
                 $previousForeignEntity = $this->getEntityManager()->getRepository($foreignEntityType)->where($where)->findOne();
                 if ($previousForeignEntity) {
-                    $entity->setFetched($idFieldName, $previousForeignEntity->id);
+                    if (!$entity->isNew()) {
+                        $entity->setFetched($idFieldName, $previousForeignEntity->id);
+                    }
                     if ($previousForeignEntity->id !== $entity->get($idFieldName)) {
                         $previousForeignEntity->set($foreignKey, null);
                         $this->getEntityManager()->saveEntity($previousForeignEntity);
                     }
                 } else {
-                    $entity->setFetched($idFieldName, null);
+                    if (!$entity->isNew()) {
+                        $entity->setFetched($idFieldName, null);
+                    }
                 }
 
                 if ($entity->get($idFieldName)) {

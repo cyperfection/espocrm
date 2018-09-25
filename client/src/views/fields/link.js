@@ -116,7 +116,9 @@ Espo.define('views/fields/link', 'views/fields/base', function (Dep) {
                         filters: this.getSelectFilters(),
                         boolFilterList: this.getSelectBoolFilterList(),
                         primaryFilterName: this.getSelectPrimaryFilterName(),
-                        createAttributes: (this.mode === 'edit') ? this.getCreateAttributes() : null
+                        createAttributes: (this.mode === 'edit') ? this.getCreateAttributes() : null,
+                        mandatorySelectAttributeList: this.mandatorySelectAttributeList,
+                        forceSelectAllAttributes: this.forceSelectAllAttributes
                     }, function (view) {
                         view.render();
                         this.notify(false);
@@ -397,7 +399,7 @@ Espo.define('views/fields/link', 'views/fields/base', function (Dep) {
             var $container = this.$el.find('.link-one-of-container');
             var $el = $('<div />').addClass('link-' + id).addClass('list-group-item');
             $el.html(name + '&nbsp');
-            $el.prepend('<a href="javascript:" class="pull-right" data-id="' + id + '" data-action="clearLinkOneOf"><span class="glyphicon glyphicon-remove"></a>');
+            $el.prepend('<a href="javascript:" class="pull-right" data-id="' + id + '" data-action="clearLinkOneOf"><span class="fas fa-times"></a>');
             $container.append($el);
 
             return $el;

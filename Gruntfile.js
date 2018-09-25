@@ -28,6 +28,7 @@ module.exports = function (grunt) {
         'client/lib/handlebars.js',
         'client/lib/base64.js',
         'client/lib/jquery-ui.min.js',
+        'client/lib/jquery.ui.touch-punch.min.js',
         'client/lib/moment.min.js',
         'client/lib/moment-timezone-with-data.min.js',
         'client/lib/jquery.timepicker.min.js',
@@ -118,6 +119,9 @@ module.exports = function (grunt) {
         clean: {
             start: ['build/*'],
             final: ['build/tmp'],
+            beforeFinal: {
+                src: ['build/tmp/custom/Espo/Custom/*', '!build/tmp/custom/Espo/Custom/.htaccess']
+            }
         },
         less: lessData,
         uglify: {
@@ -290,9 +294,10 @@ module.exports = function (grunt) {
         'copy:frontendLib',
         'copy:backend',
         'replace',
+        'clean:beforeFinal',
         'copy:final',
         'chmod',
-        'clean:final',
+        'clean:final'
     ]);
 
 };

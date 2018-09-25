@@ -181,7 +181,7 @@ class Converter
         $schema = $this->getSchema(true);
 
         $indexList = SchemaUtils::getIndexList($ormMeta);
-        $fieldListExceededIndexMaxLength = SchemaUtils::getFieldListExceededIndexMaxLength($ormMeta, $this->getMaxIndexLength(), $indexList);
+        $fieldListExceededIndexMaxLength = SchemaUtils::getFieldListExceededIndexMaxLength($ormMeta, $this->getMaxIndexLength());
 
         $tables = array();
         foreach ($ormMeta as $entityName => $entityParams) {

@@ -128,6 +128,28 @@ class EntityManager
         return false;
     }
 
+    protected function checkRelationshipExists($name)
+    {
+        $name = ucfirst($name);
+
+        $scopeList = array_keys($this->getMetadata()->get(['scopes'], []));
+
+        foreach ($scopeList as $entityType) {
+            $relationsDefs = $this->getEntityManager()->getMetadata()->get($entityType, 'relations');
+            if (empty($relationsDefs)) continue;
+            foreach ($relationsDefs as $link => $item) {
+                if (empty($item['type'])) continue;
+                if (empty($item['relationName'])) continue;
+                if ($item['type'] === 'manyMany') {
+                    if (ucfirst($item['relationName']) === $name) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     public function create($name, $type, $params = [], $replaceData = [])
     {
         $name = ucfirst($name);
@@ -170,6 +192,10 @@ class EntityManager
 
         if (in_array(strtolower($name), $this->reservedWordList)) {
             throw new Conflict('Entity name \''.$name.'\' is not allowed.');
+        }
+
+        if ($this->checkRelationshipExists($name)) {
+            throw new Conflict('Relationship with the same name \''.$name.'\' exists.');
         }
 
         $normalizedName = Util::normilizeClassName($name);
@@ -556,14 +582,23 @@ class EntityManager
             } else {
                 $relationName = lcfirst($entity) . $entityForeign;
             }
+            if (strlen($relationName) > 100) {
+                throw new Error('Relation name should not be longer than 100.');
+            }
+            if ($this->getMetadata()->get(['scopes', ucfirst($relationName)])) {
+                throw new Conflict("Entity with the same name '{$relationName}' exists.");
+            }
+            if ($this->checkRelationshipExists($relationName)) {
+                throw new Conflict("Relationship with the same name '{$relationName}' exists.");
+            }
         }
 
         if (empty($link) || empty($linkForeign)) {
             throw new BadRequest();
         }
 
-        if (strlen($link) > 255 || strlen($linkForeign) > 255) {
-            throw new Error('Link name should not be longer than 255.');
+        if (strlen($link) > 100 || strlen($linkForeign) > 100) {
+            throw new Error('Link name should not be longer than 100.');
         }
 
         if (is_numeric($link[0]) || is_numeric($linkForeign[0])) {
@@ -630,7 +665,6 @@ class EntityManager
                         $link => array(
                             "type" => "linkMultiple",
                             "layoutDetailDisabled"  => !$linkMultipleField,
-                            "layoutListDisabled"  => true,
                             "layoutMassUpdateDisabled"  => !$linkMultipleField,
                             "noLoad"  => !$linkMultipleField,
                             "importDisabled" => !$linkMultipleField,
@@ -695,7 +729,6 @@ class EntityManager
                         $linkForeign => array(
                             "type" => "linkMultiple",
                             "layoutDetailDisabled"  => !$linkMultipleFieldForeign,
-                            "layoutListDisabled"  => true,
                             "layoutMassUpdateDisabled"  => !$linkMultipleFieldForeign,
                             "noLoad"  => !$linkMultipleFieldForeign,
                             "importDisabled" => !$linkMultipleFieldForeign,
@@ -719,7 +752,6 @@ class EntityManager
                         $link => array(
                             "type" => "linkMultiple",
                             "layoutDetailDisabled"  => !$linkMultipleField,
-                            "layoutListDisabled"  => true,
                             "layoutMassUpdateDisabled"  => !$linkMultipleField,
                             "importDisabled" => !$linkMultipleField,
                             "noLoad"  => !$linkMultipleField,
@@ -742,7 +774,6 @@ class EntityManager
                         $linkForeign => array(
                             "type" => "linkMultiple",
                             "layoutDetailDisabled"  => !$linkMultipleFieldForeign,
-                            "layoutListDisabled"  => true,
                             "layoutMassUpdateDisabled"  => !$linkMultipleFieldForeign,
                             "importDisabled" => !$linkMultipleFieldForeign,
                             "noLoad"  => !$linkMultipleFieldForeign,
@@ -816,7 +847,6 @@ class EntityManager
                         $link => array(
                             "type" => "linkMultiple",
                             "layoutDetailDisabled"  => !$linkMultipleField,
-                            "layoutListDisabled"  => true,
                             "layoutMassUpdateDisabled"  => !$linkMultipleField,
                             "noLoad"  => !$linkMultipleField,
                             "importDisabled" => !$linkMultipleField,
@@ -841,7 +871,6 @@ class EntityManager
                         $linkForeign => array(
                             "type" => "linkMultiple",
                             "layoutDetailDisabled"  => !$linkMultipleFieldForeign,
-                            "layoutListDisabled"  => true,
                             "layoutMassUpdateDisabled"  => !$linkMultipleFieldForeign,
                             "noLoad"  => !$linkMultipleFieldForeign,
                             "importDisabled" => !$linkMultipleFieldForeign,

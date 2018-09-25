@@ -32,13 +32,17 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
 
         type: 'array',
 
-        listTemplate: 'fields/array/detail',
+        listTemplate: 'fields/array/list',
 
         detailTemplate: 'fields/array/detail',
 
         editTemplate: 'fields/array/edit',
 
         searchTemplate: 'fields/array/search',
+
+        searchTypeList: ['anyOf', 'noneOf', 'isEmpty', 'isNotEmpty'],
+
+        maxItemLength: null,
 
         data: function () {
             var itemHtmlList = [];
@@ -51,7 +55,9 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
                 translatedOptions: this.translatedOptions,
                 hasOptions: this.params.options ? true : false,
                 itemHtmlList: itemHtmlList,
-                isEmpty: (this.selected || []).length === 0
+                isEmpty: (this.selected || []).length === 0,
+                valueIsSet: this.model.has(this.name),
+                maxItemLength: this.maxItemLength
             }, Dep.prototype.data.call(this));
         },
 
@@ -109,7 +115,25 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
             }
 
             if (this.options.customOptionList) {
-                this.setOptionList(this.options.customOptionList);
+                this.setOptionList(this.options.customOptionList, true);
+            }
+        },
+
+        setupSearch: function () {
+            this.events = _.extend({
+                'change select.search-type': function (e) {
+                    this.handleSearchType($(e.currentTarget).val());
+                }
+            }, this.events || {});
+        },
+
+        handleSearchType: function (type) {
+            var $inputContainer = this.$el.find('div.input-container');
+
+            if (~['anyOf', 'noneOf'].indexOf(type)) {
+                $inputContainer.removeClass('hidden');
+            } else {
+                $inputContainer.addClass('hidden');
             }
         },
 
@@ -146,13 +170,21 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
 
         },
 
-        setOptionList: function (optionList) {
+        setOptionList: function (optionList, silent) {
             if (!this.originalOptionList) {
                 this.originalOptionList = this.params.options;
             }
             this.params.options = Espo.Utils.clone(optionList);
 
-            if (this.mode == 'edit') {
+            if (this.mode == 'edit' && !silent) {
+                var selectedOptionList = [];
+                this.selected.forEach(function (option) {
+                    if (~optionList.indexOf(option)) {
+                        selectedOptionList.push(option);
+                    }
+                }, this);
+                this.selected = selectedOptionList;
+
                 if (this.isRendered()) {
                     this.reRender();
                     this.trigger('change');
@@ -216,7 +248,7 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
         renderSearch: function () {
             var $element = this.$element = this.$el.find('[name="' + this.name + '"]');
 
-            var valueList = this.searchParams.valueFront || [];
+            var valueList = this.getSearchParamsData().valueList || this.searchParams.valueFront || [];
             this.$element.val(valueList.join(':,:'));
 
             var data = [];
@@ -254,6 +286,9 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
             });
 
             this.$el.find('.selectize-dropdown-content').addClass('small');
+
+            var type = this.$el.find('select.search-type').val();
+            this.handleSearchType(type);
         },
 
         fetchFromDom: function () {
@@ -307,7 +342,7 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
             }
 
             var html = '<div class="list-group-item" data-value="' + valueSanitized + '" style="cursor: default;">' + label +
-            '&nbsp;<a href="javascript:" class="pull-right" data-value="' + valueSanitized + '" data-action="removeValue"><span class="glyphicon glyphicon-remove"></a>' +
+            '&nbsp;<a href="javascript:" class="pull-right" data-value="' + valueSanitized + '" data-action="removeValue"><span class="fas fa-times"></a>' +
             '</div>';
 
             return html;
@@ -338,34 +373,64 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
         },
 
         fetchSearch: function () {
-            var field = this.name;
+            var type = this.$el.find('select.search-type').val() || 'anyOf';
+
             var arr = [];
             var arrFront = [];
 
-            var list = this.$element.val().split(':,:');
-            if (list.length == 1 && list[0] == '') {
-                list = [];
+            if (~['anyOf', 'noneOf'].indexOf(type)) {
+                var valueList = this.$element.val().split(':,:');
+                if (valueList.length == 1 && valueList[0] == '') {
+                    valueList = [];
+                }
             }
 
-            list.forEach(function(value) {
-                arr.push({
-                    type: 'like',
-                    field: field,
-                    value: "%" + value.replace(/\//g, '\\\\/' ) + "%"
-                });
-                arrFront.push(value);
-            });
-
-            if (arr.length == 0) {
-                return false;
+            if (type === 'anyOf') {
+                var data = {
+                    type: 'arrayAnyOf',
+                    value: valueList,
+                    data: {
+                        type: 'anyOf',
+                        valueList: valueList
+                    }
+                };
+                if (!valueList.length) {
+                    data.value = null;
+                }
+                return data;
             }
 
-            var data = {
-                type: 'or',
-                value: arr,
-                valueFront: arrFront
-            };
-            return data;
+            if (type === 'noneOf') {
+                var data = {
+                    type: 'arrayNoneOf',
+                    value: valueList,
+                    data: {
+                        type: 'noneOf',
+                        valueList: valueList
+                    }
+                };
+                return data;
+            }
+
+            if (type === 'isEmpty') {
+                var data = {
+                    type: 'arrayIsEmpty',
+                    data: {
+                        type: 'isEmpty'
+                    }
+                };
+                return data;
+            }
+
+            if (type === 'isNotEmpty') {
+                var data = {
+                    type: 'arrayIsNotEmpty',
+                    data: {
+                        type: 'isNotEmpty'
+                    }
+                };
+                return data;
+            }
         },
 
         validateRequired: function () {
@@ -377,9 +442,11 @@ Espo.define('views/fields/array', ['views/fields/base', 'lib!Selectize'], functi
                     return true;
                 }
             }
+        },
+
+        getSearchType: function () {
+            return this.getSearchParamsData().type || 'anyOf';
         }
 
     });
 });
-
-

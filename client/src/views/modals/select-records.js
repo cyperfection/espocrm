@@ -50,8 +50,8 @@ Espo.define('views/modals/select-records', ['views/modal', 'search-manager'], fu
 
         data: function () {
             return {
-                createButton: this.createButton && this.getAcl().check(this.scope, 'create'),
-                createText: this.translate('Create ' + this.scope, 'labels', this.scope) 
+                createButton: this.createButton,
+                createText: this.translate('Create ' + this.scope, 'labels', this.scope)
             };
         },
 
@@ -118,12 +118,25 @@ Espo.define('views/modals/select-records', ['views/modal', 'search-manager'], fu
                 this.createButton = false;
             }
 
+            if (this.createButton) {
+                if (
+                    !this.getAcl().check(this.scope, 'create')
+                    ||
+                    this.getMetadata().get(['clientDefs', this.scope, 'createDisabled'])
+                ) {
+                    this.createButton = false;
+                }
+            }
+
             this.header = '';
             var iconHtml = this.getHelper().getScopeColorIconHtml(this.scope);
             this.header += this.getLanguage().translate(this.scope, 'scopeNamesPlural');
             this.header = iconHtml + this.header;
 
             this.waitForView('list');
+            if (this.searchPanel) {
+                this.waitForView('search');
+            }
 
             this.getCollectionFactory().create(this.scope, function (collection) {
                 collection.maxSize = this.getConfig().get('recordsPerPageSmall') || 5;
@@ -133,8 +146,8 @@ Espo.define('views/modals/select-records', ['views/modal', 'search-manager'], fu
                 this.defaultAsc = collection.asc;
 
                 this.loadSearch();
+                this.wait(true);
                 this.loadList();
-                collection.fetch();
             }, this);
 
         },
@@ -207,14 +220,38 @@ Espo.define('views/modals/select-records', ['views/modal', 'search-manager'], fu
                             this.disableButton('select');
                         }
                     }, this);
+                    this.listenTo(view, 'select-all-results', function () {
+                        this.enableButton('select');
+                    }, this);
                 }
 
-                view.getSelectAttributeList(function (selectAttributeList) {
-                    if (selectAttributeList) {
-                        this.collection.data.select = selectAttributeList.join(',');
-                    }
+                if (this.options.forceSelectAllAttributes || this.forceSelectAllAttributes) {
+                    this.listenToOnce(view, 'after:build-rows', function () {
+                        this.wait(false);
+                    }, this);
                     this.collection.fetch();
-                }.bind(this));
+                } else {
+                    view.getSelectAttributeList(function (selectAttributeList) {
+                        if (!~selectAttributeList.indexOf('name')) {
+                            selectAttributeList.push('name');
+                        }
+
+                        var mandatorySelectAttributeList = this.options.mandatorySelectAttributeList || this.mandatorySelectAttributeList || [];
+                        mandatorySelectAttributeList.forEach(function (attribute) {
+                            if (!~selectAttributeList.indexOf(attribute)) {
+                                selectAttributeList.push(attribute);
+                            }
+                        }, this);
+
+                        if (selectAttributeList) {
+                            this.collection.data.select = selectAttributeList.join(',');
+                        }
+                        this.listenToOnce(view, 'after:build-rows', function () {
+                            this.wait(false);
+                        }, this);
+                        this.collection.fetch();
+                    }.bind(this));
+                }
             });
         },
 

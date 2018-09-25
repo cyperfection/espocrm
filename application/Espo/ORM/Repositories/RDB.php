@@ -141,6 +141,8 @@ class RDB extends \Espo\ORM\Repository
 
     public function save(Entity $entity, array $options = array())
     {
+        $entity->setAsBeingSaved();
+
         if (empty($options['skipBeforeSave']) && empty($options['skipAll'])) {
             $this->beforeSave($entity, $options);
         }
@@ -164,6 +166,8 @@ class RDB extends \Espo\ORM\Repository
                 }
             }
         }
+        $entity->setAsNotBeingSaved();
+
         return $result;
     }
 
@@ -192,10 +196,11 @@ class RDB extends \Espo\ORM\Repository
 
     public function find(array $params = array())
     {
+        $params = $this->getSelectParams($params);
+
         if (empty($params['skipAdditionalSelectParams'])) {
             $this->handleSelectParams($params);
         }
-        $params = $this->getSelectParams($params);
 
         $dataArr = $this->getMapper()->select($this->seed, $params);
 

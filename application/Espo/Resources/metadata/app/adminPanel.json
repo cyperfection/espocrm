@@ -181,6 +181,16 @@
             "url":"#Import",
             "label":"Import",
             "description":"import"
+         },
+         {
+            "url":"#LeadCapture",
+            "label":"Lead Capture",
+            "description":"leadCapture"
+         },
+         {
+            "url": "#Attachment",
+            "label": "Attachments",
+            "description": "attachments"
          }
       ],
       "order": 25

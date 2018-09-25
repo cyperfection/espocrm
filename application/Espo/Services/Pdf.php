@@ -81,6 +81,10 @@ class Pdf extends \Espo\Core\Services\Base
     protected function printEntity(Entity $entity, Entity $template, Htmlizer $htmlizer, \Espo\Core\Pdf\Tcpdf $pdf)
     {
         $fontFace = $this->getConfig()->get('pdfFontFace', $this->fontFace);
+        if ($template->get('fontFace')) {
+            $fontFace = $template->get('fontFace');
+        }
+
 	    if ($template->get('printBackgroundImage') && $template->get('backgroundImageId')) {
 
 		    $attachment = $this->getEntityManager()->getEntity('Attachment', $template->get('backgroundImageId'));

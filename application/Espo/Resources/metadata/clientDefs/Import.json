@@ -1,12 +1,13 @@
 {
     "controller": "controllers/import",
+    "acl": "acl/import",
     "recordViews": {
-        "list":"Import.Record.List",
-        "detail": "Import.Record.Detail"
+        "list": "views/import/record/list",
+        "detail": "views/import/record/detail"
     },
     "views": {
-    	"list": "Import.List",
-    	"detail": "Import.Detail"
+    	"list": "views/import/list",
+    	"detail": "views/import/detail"
     },
     "bottomPanels": {
     	"detail": [
@@ -28,5 +29,6 @@
 	    	}
 	    ]
     },
-    "searchPanelDisabled": true
+    "searchPanelDisabled": true,
+    "iconClass": "fas fa-file-import"
 }

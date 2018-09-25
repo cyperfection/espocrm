@@ -59,13 +59,15 @@ class Campaign extends \Espo\Services\Record
             'action' => 'Sent',
             'isTest' => false
         ))->count();
+        if (!$sentCount) {
+            $sentCount = null;
+        }
         $entity->set('sentCount', $sentCount);
 
         $openedCount = $this->getEntityManager()->getRepository('CampaignLogRecord')->where(array(
             'campaignId' => $entity->id,
             'action' => 'Opened',
-            'isTest' => false,
-            'groupBy' => ['queueItemId']
+            'isTest' => false
         ))->count();
         $entity->set('openedCount', $openedCount);
 
@@ -78,8 +80,7 @@ class Campaign extends \Espo\Services\Record
         $clickedCount = $this->getEntityManager()->getRepository('CampaignLogRecord')->where(array(
             'campaignId' => $entity->id,
             'action' => 'Clicked',
-            'isTest' => false,
-            'groupBy' => ['queueItemId']
+            'isTest' => false
         ))->count();
         $entity->set('clickedCount', $clickedCount);
 
@@ -89,12 +90,19 @@ class Campaign extends \Espo\Services\Record
         }
         $entity->set('clickedPercentage', $clickedPercentage);
 
+        $optedInCount = $this->getEntityManager()->getRepository('CampaignLogRecord')->where(array(
+            'campaignId' => $entity->id,
+            'action' => 'Opted In',
+            'isTest' => false
+        ))->groupBy(['parentId', 'parentType'])->count();
+        if (!$optedInCount) $optedInCount = null;
+        $entity->set('optedInCount', $optedInCount);
+
         $optedOutCount = $this->getEntityManager()->getRepository('CampaignLogRecord')->where(array(
             'campaignId' => $entity->id,
             'action' => 'Opted Out',
-            'isTest' => false,
-            'groupBy' => ['queueItemId']
-        ))->count();
+            'isTest' => false
+        ))->groupBy(['parentId', 'parentType'])->count();
         $entity->set('optedOutCount', $optedOutCount);
 
         $optedOutPercentage = null;
@@ -106,13 +114,12 @@ class Campaign extends \Espo\Services\Record
         $bouncedCount = $this->getEntityManager()->getRepository('CampaignLogRecord')->where(array(
             'campaignId' => $entity->id,
             'action' => 'Bounced',
-            'isTest' => false,
-            'groupBy' => ['queueItemId']
+            'isTest' => false
         ))->count();
         $entity->set('bouncedCount', $bouncedCount);
 
         $bouncedPercentage = null;
-        if ($sentCount > 0) {
+        if ($sentCount && $sentCount > 0) {
             $bouncedPercentage = round($bouncedCount / $sentCount * 100, 2, \PHP_ROUND_HALF_EVEN);
         }
         $entity->set('bouncedPercentage', $bouncedPercentage);
@@ -120,6 +127,9 @@ class Campaign extends \Espo\Services\Record
         $leadCreatedCount = $this->getEntityManager()->getRepository('Lead')->where(array(
             'campaignId' => $entity->id
         ))->count();
+        if (!$leadCreatedCount) {
+            $leadCreatedCount = null;
+        }
         $entity->set('leadCreatedCount', $leadCreatedCount);
 
         $entity->set('revenueCurrency', $this->getConfig()->get('defaultCurrency'));
@@ -143,12 +153,32 @@ class Campaign extends \Espo\Services\Record
         $sth = $pdo->prepare($sql);
         $sth->execute();
 
+        $revenue = null;
         if ($row = $sth->fetch(\PDO::FETCH_ASSOC)) {
             $revenue = floatval($row['SUM:amountConverted']);
-            if ($revenue > 0) {
-                $entity->set('revenue', $revenue);
+            if (!$revenue) {
+                $revenue = null;
             }
         }
+        $entity->set('revenue', $revenue);
+    }
+
+    public function logLeadCreated($campaignId, Entity $target, $actionDate = null, $isTest = false)
+    {
+        if (empty($actionDate)) {
+            $actionDate = date('Y-m-d H:i:s');
+        }
+        $logRecord = $this->getEntityManager()->getEntity('CampaignLogRecord');
+        $logRecord->set([
+            'campaignId' => $campaignId,
+            'actionDate' => $actionDate,
+            'parentId' => $target->id,
+            'parentType' => $target->getEntityType(),
+            'action' => 'Lead Created',
+            'isTest' => $isTest
+        ]);
+
+        $this->getEntityManager()->saveEntity($logRecord);
     }
 
     public function logSent($campaignId, $queueItemId = null, Entity $target, Entity $emailOrEmailTemplate = null, $emailAddress, $actionDate = null, $isTest = false)
@@ -205,6 +235,34 @@ class Campaign extends \Espo\Services\Record
         } else {
             $logRecord->set('stringAdditionalData', 'Soft');
         }
+        $this->getEntityManager()->saveEntity($logRecord);
+    }
+
+    public function logOptedIn($campaignId, $queueItemId = null, Entity $target, $emailAddress = null, $actionDate = null, $isTest = false)
+    {
+        if ($queueItemId && $this->getEntityManager()->getRepository('CampaignLogRecord')->where([
+            'queueItemId' => $queueItemId,
+            'action' => 'Opted In',
+            'isTest' => $isTest
+        ])->findOne()) return;
+
+        if (empty($actionDate)) {
+            $actionDate = date('Y-m-d H:i:s');
+        }
+        if (!$emailAddress) {
+            $emailAddress = $target->get('emailAddress');
+        }
+        $logRecord = $this->getEntityManager()->getEntity('CampaignLogRecord');
+        $logRecord->set([
+            'campaignId' => $campaignId,
+            'actionDate' => $actionDate,
+            'parentId' => $target->id,
+            'parentType' => $target->getEntityType(),
+            'action' => 'Opted In',
+            'stringData' => $emailAddress,
+            'queueItemId' => $queueItemId,
+            'isTest' => $isTest
+        ]);
         $this->getEntityManager()->saveEntity($logRecord);
     }
 

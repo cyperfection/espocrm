@@ -33,6 +33,8 @@
   .clearfix();
 }
 
+@line-height-small-computed: floor((@font-size-base * @line-height-small));
+
 @table-cell-padding: 8px;
 
 @table-cell-less-padding: 3px;
@@ -135,10 +137,18 @@
 
 @panel-border-width: 2px;
 
-@navbar-panel-body-max-height: 350px;
+@navbar-panel-body-max-height: 600px;
 
 @form-group-margin-bottom: 12px;
 
 @modal-title-line-height: floor(@font-size-h4 * @line-height-base);
 
 @navbar-color-border-width: 4px;
+
+@container-max-width: 1800px;
+
+@grid-column-width-xsmall: 190px;
+@grid-column-width-small: 252px;
+@grid-column-width-medium: 340px;
+
+@navbar-inverse-toggle-border-color: transparent;

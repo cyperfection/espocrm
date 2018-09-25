@@ -60,8 +60,7 @@ Espo.define('views/detail', 'views/main', function (Dep) {
                 name: 'follow',
                 label: 'Follow',
                 style: 'default',
-                icon: 'glyphicon glyphicon-share-alt',
-                html: '<span class="glyphicon glyphicon-share-alt"></span> ' + this.translate('Follow'),
+                html: '<span class="fas fa-arrow-right fa-sm"></span> ' + this.translate('Follow'),
                 action: 'follow'
             }, true);
         },
@@ -98,6 +97,7 @@ Espo.define('views/detail', 'views/main', function (Dep) {
                     if (this.getView('header')) {
                         this.getView('header').reRender();
                     }
+                    this.updatePageTitle();
                 }
             }, this);
         },

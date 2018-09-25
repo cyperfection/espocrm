@@ -43,7 +43,7 @@ class Helper
         'pdo_mysql' => '\Espo\Core\Utils\Database\DBAL\Driver\PDOMySql\Driver',
     );
 
-    public function __construct(\Espo\Core\Utils\Config $config)
+    public function __construct(\Espo\Core\Utils\Config $config = null)
     {
         $this->config = $config;
     }
@@ -56,7 +56,16 @@ class Helper
     public function getDbalConnection()
     {
         if (!isset($this->connection)) {
+            if (!$this->getConfig()) {
+                return null;
+            }
+
             $connectionParams = $this->getConfig()->get('database');
+
+            if (empty($connectionParams['dbname']) || empty($connectionParams['user'])) {
+                return null;
+            }
+
             $connectionParams['driverClass'] = $this->drivers[ $connectionParams['driver'] ];
             unset($connectionParams['driver']);
 
@@ -74,10 +83,12 @@ class Helper
      *
      * @return int
      */
-    public function getMaxIndexLength($tableName = null)
+    public function getMaxIndexLength($tableName = null, $default = 1000)
     {
-        $connection = $this->getDbalConnection();
         $mysqlEngine = $this->getMysqlEngine($tableName);
+        if (!$mysqlEngine) {
+            return $default;
+        }
 
         switch ($mysqlEngine) {
             case 'InnoDB':
@@ -98,14 +109,18 @@ class Helper
         return 1000; //MyISAM
     }
 
-    public function getTableMaxIndexLength($tableName)
+    public function getTableMaxIndexLength($tableName, $default = 1000)
     {
-        return $this->getMaxIndexLength($tableName);
+        return $this->getMaxIndexLength($tableName, $default);
     }
 
     protected function getMysqlVersion()
     {
         $connection = $this->getDbalConnection();
+        if (!$connection) {
+            return null;
+        }
+
         return $connection->fetchColumn("select version()");
     }
 
@@ -116,9 +131,12 @@ class Helper
      *
      * @return string
      */
-    protected function getMysqlEngine($tableName = null)
+    protected function getMysqlEngine($tableName = null, $default = null)
     {
         $connection = $this->getDbalConnection();
+        if (!$connection) {
+            return $default;
+        }
 
         $query = "SHOW TABLE STATUS WHERE Engine = 'MyISAM'";
         if (!empty($tableName)) {
@@ -141,17 +159,19 @@ class Helper
      *
      * @return boolean
      */
-    public function isSupportsFulltext($tableName = null)
+    public function isSupportsFulltext($tableName = null, $default = false)
     {
-        $connection = $this->getDbalConnection();
         $mysqlEngine = $this->getMysqlEngine($tableName);
+        if (!$mysqlEngine) {
+            return $default;
+        }
 
         switch ($mysqlEngine) {
             case 'InnoDB':
                 $mysqlVersion = $this->getMysqlVersion();
 
-                if (version_compare($mysqlVersion, '5.6.0') >= 0) {
-                    return true; //InnoDB, MySQL 5.6+
+                if (version_compare($mysqlVersion, '5.6.4') >= 0) {
+                    return true; //InnoDB, MySQL 5.6.4+
                 }
 
                 return false; //InnoDB
@@ -161,8 +181,8 @@ class Helper
         return true; //MyISAM
     }
 
-    public function isTableSupportsFulltext($tableName)
+    public function isTableSupportsFulltext($tableName, $default = false)
     {
-        return $this->isSupportsFulltext($tableName);
+        return $this->isSupportsFulltext($tableName, $default);
     }
 }

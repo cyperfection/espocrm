@@ -30,6 +30,8 @@ Espo.define('views/admin/field-manager/fields/options', 'views/fields/array', fu
 
     return Dep.extend({
 
+        maxItemLength: 100,
+
         setup: function () {
             Dep.prototype.setup.call(this);
 
@@ -57,7 +59,7 @@ Espo.define('views/admin/field-manager/fields/options', 'views/fields/array', fu
                     '<div>' + valueSanitized + '</div>' +
                 '</div>' +
                 '<div style="width: 8%; display: inline-block; vertical-align: top;">' +
-                    '<a href="javascript:" class="pull-right" data-value="' + valueInternal + '" data-action="removeValue"><span class="glyphicon glyphicon-remove"></a>' +
+                    '<a href="javascript:" class="pull-right" data-value="' + valueInternal + '" data-action="removeValue"><span class="fas fa-times"></a>' +
                 '</div><br style="clear: both;" />' +
             '</div>';
 
